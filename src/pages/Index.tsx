@@ -146,10 +146,12 @@ export default function Index() {
           <p className="text-primary-foreground/80 mb-8 font-sans text-lg">
             Join thousands of travelers discovering destinations through short-form video.
           </p>
-          <Button size="lg" variant="secondary" className="gap-2 font-sans text-base px-8 shadow-warm">
-            <Play className="w-5 h-5" />
-            Get Started — It's Free
-          </Button>
+          <Link to="/onboarding">
+            <Button size="lg" variant="secondary" className="gap-2 font-sans text-base px-8 shadow-warm">
+              <Play className="w-5 h-5" />
+              Get Started — It's Free
+            </Button>
+          </Link>
         </div>
       </section>
 
