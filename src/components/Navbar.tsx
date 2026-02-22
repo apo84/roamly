@@ -1,13 +1,15 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { MapPin, Compass, Heart, Map, Menu, X, Search } from "lucide-react";
+import { MapPin, Compass, Heart, Map, Menu, X, Search, Award, Route } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const navLinks = [
   { to: "/explore", label: "Explore", icon: Compass },
   { to: "/map", label: "Map", icon: Map },
   { to: "/collections", label: "Collections", icon: Heart },
+  { to: "/itinerary", label: "Itinerary", icon: Route },
+  { to: "/passport", label: "Passport", icon: Award },
 ];
 
 export default function Navbar() {

@@ -8,6 +8,14 @@ import Index from "./pages/Index";
 import Explore from "./pages/Explore";
 import MapPage from "./pages/MapPage";
 import Collections from "./pages/Collections";
+import Onboarding from "./pages/Onboarding";
+import ContentSync from "./pages/ContentSync";
+import Processing from "./pages/Processing";
+import TripMap from "./pages/TripMap";
+import ItineraryPage from "./pages/Itinerary";
+import Passport from "./pages/Passport";
+import SyncError from "./pages/SyncError";
+import NoResults from "./pages/NoResults";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -24,6 +32,14 @@ const App = () => (
           <Route path="/explore" element={<Explore />} />
           <Route path="/map" element={<MapPage />} />
           <Route path="/collections" element={<Collections />} />
+          <Route path="/onboarding" element={<Onboarding />} />
+          <Route path="/sync" element={<ContentSync />} />
+          <Route path="/processing" element={<Processing />} />
+          <Route path="/trip/:city" element={<TripMap />} />
+          <Route path="/itinerary" element={<ItineraryPage />} />
+          <Route path="/passport" element={<Passport />} />
+          <Route path="/sync-error" element={<SyncError />} />
+          <Route path="/no-results" element={<NoResults />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
