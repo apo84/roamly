@@ -1,6 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { X, Plus, Navigation, Play, Heart, ExternalLink, Route } from "lucide-react";
@@ -18,13 +17,6 @@ const pinIcon = (active: boolean) =>
     iconSize: [36, 36],
     iconAnchor: [18, 18],
   });
-
-function FitBounds() {
-  const map = useMap();
-  const bounds = L.latLngBounds(barcelonaLocations.map((l) => [l.lat, l.lng]));
-  map.fitBounds(bounds.pad(0.2));
-  return null;
-}
 
 function VideoPanel({ video, location, onClose, onAdd }: { video: Video; location: Location; onClose: () => void; onAdd: () => void }) {
   const distances = ["0.3 km", "0.8 km", "1.2 km", "0.5 km", "1.8 km", "0.4 km", "3.1 km", "0.6 km"];
@@ -61,7 +53,6 @@ function VideoPanel({ video, location, onClose, onAdd }: { video: Video; locatio
 
         <p className="text-sm font-sans text-foreground/80">{video.caption}</p>
 
-        {/* Distance from hotel */}
         <div className="p-3 rounded-xl bg-secondary/50 flex items-center gap-3">
           <div className="w-10 h-10 rounded-lg bg-accent flex items-center justify-center">
             <Navigation className="w-5 h-5 text-accent-foreground" />
@@ -72,21 +63,18 @@ function VideoPanel({ video, location, onClose, onAdd }: { video: Video; locatio
           </div>
         </div>
 
-        {/* Location info */}
         <div className="p-3 rounded-xl border border-border">
           <p className="text-sm font-semibold font-sans">{location.name}</p>
           <p className="text-xs text-muted-foreground font-sans">{location.city}, {location.country}</p>
           <span className="inline-block mt-1 text-xs px-2 py-0.5 rounded-full bg-secondary font-sans capitalize">{location.type}</span>
         </div>
 
-        {/* Engagement */}
         <div className="flex items-center gap-4 text-sm text-muted-foreground font-sans">
           <span className="flex items-center gap-1"><Heart className="w-3.5 h-3.5" /> {(video.likes / 1000).toFixed(1)}K</span>
           <span>{(video.views / 1000).toFixed(0)}K views</span>
           <span className="capitalize">{video.platform}</span>
         </div>
 
-        {/* Actions — the AHA moment */}
         <Button onClick={onAdd} size="lg" className="w-full gap-2 font-sans">
           <Plus className="w-4 h-4" /> Add to Itinerary
         </Button>
@@ -107,6 +95,9 @@ function VideoPanel({ video, location, onClose, onAdd }: { video: Video; locatio
 export default function TripMap() {
   const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
   const [itinerary, setItinerary] = useState<number[]>([]);
+  const mapRef = useRef<HTMLDivElement>(null);
+  const mapInstance = useRef<L.Map | null>(null);
+  const markersRef = useRef<L.Marker[]>([]);
 
   const selectedVideo = selectedIdx !== null ? barcelonaVideos[selectedIdx] : null;
   const selectedLocation = selectedIdx !== null ? barcelonaLocations[selectedIdx] : null;
@@ -117,21 +108,46 @@ export default function TripMap() {
     }
   };
 
+  // Initialize map
+  useEffect(() => {
+    if (!mapRef.current || mapInstance.current) return;
+
+    const map = L.map(mapRef.current).setView([41.3874, 2.1686], 14);
+    mapInstance.current = map;
+
+    L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
+      attribution: "&copy; CARTO",
+    }).addTo(map);
+
+    const bounds = L.latLngBounds(barcelonaLocations.map((l) => [l.lat, l.lng]));
+    map.fitBounds(bounds.pad(0.2));
+
+    barcelonaVideos.forEach((video, i) => {
+      const marker = L.marker([barcelonaLocations[i].lat, barcelonaLocations[i].lng], {
+        icon: pinIcon(false),
+      }).addTo(map);
+      marker.on("click", () => setSelectedIdx(i));
+      markersRef.current.push(marker);
+    });
+
+    return () => {
+      map.remove();
+      mapInstance.current = null;
+      markersRef.current = [];
+    };
+  }, []);
+
+  // Update marker icons when selection/itinerary changes
+  useEffect(() => {
+    markersRef.current.forEach((marker, i) => {
+      marker.setIcon(pinIcon(selectedIdx === i || itinerary.includes(i)));
+    });
+  }, [selectedIdx, itinerary]);
+
   return (
     <main className="pt-16 min-h-screen flex flex-col relative">
       <div className="flex-1 relative" style={{ minHeight: "calc(100vh - 4rem)" }}>
-        <MapContainer center={[41.3874, 2.1686]} zoom={14} scrollWheelZoom style={{ width: "100%", height: "100%" }} className="z-0">
-          <TileLayer attribution='&copy; CARTO' url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png" />
-          <FitBounds />
-          {barcelonaVideos.map((video, i) => (
-            <Marker
-              key={video.id}
-              position={[barcelonaLocations[i].lat, barcelonaLocations[i].lng]}
-              icon={pinIcon(selectedIdx === i || itinerary.includes(i))}
-              eventHandlers={{ click: () => setSelectedIdx(i) }}
-            />
-          ))}
-        </MapContainer>
+        <div ref={mapRef} style={{ width: "100%", height: "100%" }} className="z-0" />
 
         {/* Itinerary bar */}
         {itinerary.length > 0 && (

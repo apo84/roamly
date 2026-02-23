@@ -1,11 +1,8 @@
 import { useEffect, useRef } from "react";
-import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { mockVideos } from "@/data/mockData";
-import type { Video } from "@/data/mockData";
 
-// Fix default marker icons
 const createIcon = (color: string) =>
   L.divIcon({
     html: `<div style="background:${color};width:28px;height:28px;border-radius:50%;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;">
@@ -18,41 +15,43 @@ const createIcon = (color: string) =>
 
 const coralIcon = createIcon("hsl(12, 76%, 61%)");
 
-function VideoPopup({ video }: { video: Video }) {
-  return (
-    <div className="w-48 font-sans">
-      <img src={video.thumbnail} alt={video.title} className="w-full h-24 object-cover rounded-lg mb-2" />
-      <h4 className="font-semibold text-sm leading-tight">{video.title}</h4>
-      <p className="text-xs text-muted-foreground mt-1">@{video.creator}</p>
-      <p className="text-xs text-muted-foreground">{video.locations[0]?.city}, {video.locations[0]?.country}</p>
-    </div>
-  );
-}
-
 export default function MapView({ className = "" }: { className?: string }) {
+  const mapRef = useRef<HTMLDivElement>(null);
+  const mapInstance = useRef<L.Map | null>(null);
+
+  useEffect(() => {
+    if (!mapRef.current || mapInstance.current) return;
+
+    const map = L.map(mapRef.current).setView([30, 20], 2);
+    mapInstance.current = map;
+
+    L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
+      attribution: '&copy; <a href="https://carto.com/">CARTO</a>',
+    }).addTo(map);
+
+    mockVideos.forEach((video) => {
+      video.locations.forEach((loc) => {
+        const marker = L.marker([loc.lat, loc.lng], { icon: coralIcon }).addTo(map);
+        marker.bindPopup(`
+          <div style="width:192px;font-family:sans-serif;">
+            <img src="${video.thumbnail}" alt="${video.title}" style="width:100%;height:96px;object-fit:cover;border-radius:8px;margin-bottom:8px;" />
+            <h4 style="font-weight:600;font-size:14px;line-height:1.25;">${video.title}</h4>
+            <p style="font-size:12px;color:#888;margin-top:4px;">@${video.creator}</p>
+            <p style="font-size:12px;color:#888;">${loc.city}, ${loc.country}</p>
+          </div>
+        `);
+      });
+    });
+
+    return () => {
+      map.remove();
+      mapInstance.current = null;
+    };
+  }, []);
+
   return (
-    <div className={`rounded-2xl overflow-hidden shadow-card ${className}`}>
-      <MapContainer
-        center={[30, 20]}
-        zoom={2}
-        scrollWheelZoom
-        style={{ width: "100%", height: "100%" }}
-        className="z-0"
-      >
-        <TileLayer
-          attribution='&copy; <a href="https://carto.com/">CARTO</a>'
-          url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
-        />
-        {mockVideos.map((video) =>
-          video.locations.map((loc) => (
-            <Marker key={`${video.id}-${loc.id}`} position={[loc.lat, loc.lng]} icon={coralIcon}>
-              <Popup>
-                <VideoPopup video={video} />
-              </Popup>
-            </Marker>
-          ))
-        )}
-      </MapContainer>
+    <div className={`rounded-2xl overflow-hidden shadow-card h-full ${className}`}>
+      <div ref={mapRef} className="w-full h-full" style={{ minHeight: "400px" }} />
     </div>
   );
 }
