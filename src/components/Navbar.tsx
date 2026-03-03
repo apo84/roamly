@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { MapPin, Compass, Heart, Map, Menu, X, Search, Award, Route } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/lib/supabaseClient";
 
 const navLinks = [
   { to: "/explore", label: "Explore", icon: Compass },
@@ -15,6 +16,41 @@ const navLinks = [
 export default function Navbar() {
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  const handleSignInWithGoogle = async () => {
+    await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: "http://localhost:8080/auth/callback",
+      },
+    });
+  };
+
+  const handleTestMeEndpoint = async () => {
+    const { data: { session } = { session: null } } = await supabase.auth.getSession();
+
+    if (!session) {
+      // eslint-disable-next-line no-console
+      console.log("Test /api/me: no Supabase session found");
+      return;
+    }
+
+    try {
+      const res = await fetch("http://localhost:4000/api/me", {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+
+      const body = await res.json().catch(() => null);
+      // eslint-disable-next-line no-console
+      console.log("Test /api/me result:", res.status, body);
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error("Test /api/me error:", err);
+    }
+  };
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-card/80 backdrop-blur-xl border-b border-border">
@@ -51,9 +87,19 @@ export default function Navbar() {
           <Button variant="ghost" size="icon">
             <Search className="w-4 h-4" />
           </Button>
-          <Button variant="default" size="sm" className="font-sans">
+          <Button variant="default" size="sm" className="font-sans" onClick={handleSignInWithGoogle}>
             Sign In
           </Button>
+          {import.meta.env.DEV && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="font-sans"
+              onClick={handleTestMeEndpoint}
+            >
+              Test /me
+            </Button>
+          )}
         </div>
 
         {/* Mobile toggle */}
@@ -85,7 +131,28 @@ export default function Navbar() {
                   </Button>
                 </Link>
               ))}
-              <Button variant="default" className="mt-2 font-sans">Sign In</Button>
+              <Button
+                variant="default"
+                className="mt-2 font-sans"
+                onClick={() => {
+                  setMobileOpen(false);
+                  void handleSignInWithGoogle();
+                }}
+              >
+                Sign In
+              </Button>
+              {import.meta.env.DEV && (
+                <Button
+                  variant="outline"
+                  className="mt-2 font-sans"
+                  onClick={() => {
+                    setMobileOpen(false);
+                    void handleTestMeEndpoint();
+                  }}
+                >
+                  Test /me
+                </Button>
+              )}
             </div>
           </motion.div>
         )}
