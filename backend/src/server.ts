@@ -28,6 +28,6 @@ app.use((err: unknown, _req: express.Request, res: express.Response, _next: expr
 });
 
 app.listen(env.port, () => {
-  console.log(`Roamly backend listening on port ${env.port}`);
+  console.log(`Trove backend listening on port ${env.port}`);
 });
 

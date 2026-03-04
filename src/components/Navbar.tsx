@@ -26,32 +26,6 @@ export default function Navbar() {
     });
   };
 
-  const handleTestMeEndpoint = async () => {
-    const { data: { session } = { session: null } } = await supabase.auth.getSession();
-
-    if (!session) {
-      // eslint-disable-next-line no-console
-      console.log("Test /api/me: no Supabase session found");
-      return;
-    }
-
-    try {
-      const res = await fetch("http://localhost:4000/api/me", {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
-      });
-
-      const body = await res.json().catch(() => null);
-      // eslint-disable-next-line no-console
-      console.log("Test /api/me result:", res.status, body);
-    } catch (err) {
-      // eslint-disable-next-line no-console
-      console.error("Test /api/me error:", err);
-    }
-  };
-
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-card/80 backdrop-blur-xl border-b border-border">
       <div className="container mx-auto flex items-center justify-between h-16 px-4">
@@ -60,7 +34,7 @@ export default function Navbar() {
             <MapPin className="w-5 h-5 text-primary-foreground" />
           </div>
           <span className="font-display text-xl font-bold tracking-tight text-foreground">
-            Roamly
+            Trove
           </span>
         </Link>
 
@@ -90,16 +64,6 @@ export default function Navbar() {
           <Button variant="default" size="sm" className="font-sans" onClick={handleSignInWithGoogle}>
             Sign In
           </Button>
-          {import.meta.env.DEV && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="font-sans"
-              onClick={handleTestMeEndpoint}
-            >
-              Test /me
-            </Button>
-          )}
         </div>
 
         {/* Mobile toggle */}
@@ -141,18 +105,6 @@ export default function Navbar() {
               >
                 Sign In
               </Button>
-              {import.meta.env.DEV && (
-                <Button
-                  variant="outline"
-                  className="mt-2 font-sans"
-                  onClick={() => {
-                    setMobileOpen(false);
-                    void handleTestMeEndpoint();
-                  }}
-                >
-                  Test /me
-                </Button>
-              )}
             </div>
           </motion.div>
         )}

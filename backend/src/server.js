@@ -19,7 +19,7 @@ if (!supabaseUrl || !supabaseServiceKey) {
   // Fail fast so it's obvious when env is misconfigured
   // eslint-disable-next-line no-console
   console.warn(
-    "[Roamly API] SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set in backend/.env"
+    "[Trove API] SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set in backend/.env"
   );
 }
 
@@ -207,6 +207,6 @@ app.get("/api/videos/:id", async (req, res) => {
 
 app.listen(port, () => {
   // eslint-disable-next-line no-console
-  console.log(`Roamly API listening on http://localhost:${port}`);
+  console.log(`Trove API listening on http://localhost:${port}`);
 });
 

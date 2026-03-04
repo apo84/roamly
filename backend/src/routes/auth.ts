@@ -67,7 +67,7 @@ router.get("/oauth/callback", async (req: Request, res: Response) => {
     { expiresIn: "7d" },
   );
 
-  res.cookie("roamly_session", token, {
+  res.cookie("trove_session", token, {
     httpOnly: true,
     secure: env.nodeEnv === "production",
     sameSite: "lax",
@@ -78,7 +78,7 @@ router.get("/oauth/callback", async (req: Request, res: Response) => {
 });
 
 router.post("/logout", (req: Request, res: Response) => {
-  res.clearCookie("roamly_session", {
+  res.clearCookie("trove_session", {
     httpOnly: true,
     secure: env.nodeEnv === "production",
     sameSite: "lax",

@@ -1,6 +1,6 @@
-## Roamly Backend / Storage
+## Trove Backend / Storage
 
-This directory contains the backend and storage configuration for Roamly.
+This directory contains the backend and storage configuration for Trove.
 
 The goal is to run against a **managed PostgreSQL (with PostGIS)** instance in the cloud, while still supporting local development with Docker and an Express-based API that connects the React frontend to that database and to Supabase Auth.
 
@@ -10,11 +10,11 @@ The goal is to run against a **managed PostgreSQL (with PostGIS)** instance in t
 
 - Provision a managed PostgreSQL 14+ instance with **PostGIS** enabled (e.g. Supabase, Neon, RDS, Cloud SQL).
 - Create at least two databases:
-  - `roamly_dev`
-  - `roamly_prod`
+  - `trove_dev`
+  - `trove_prod`
 - Set a single connection URL per environment:
-  - `DATABASE_URL=postgres://USER:PASSWORD@HOST:PORT/roamly_dev`
-  - `DATABASE_URL=postgres://USER:PASSWORD@HOST:PORT/roamly_prod`
+  - `DATABASE_URL=postgres://USER:PASSWORD@HOST:PORT/trove_dev`
+  - `DATABASE_URL=postgres://USER:PASSWORD@HOST:PORT/trove_prod`
 - Configure this variable in your backend runtime (CI/CD or hosting provider secrets).
 
 The relational schema (users, creators, videos, locations, itineraries, collections, passport entries, etc.) is defined in the backend storage plans and will be implemented via Prisma/ORM migrations against `DATABASE_URL`.
@@ -32,14 +32,14 @@ docker compose up -d
 
 This uses `docker-compose.yml` in this directory and exposes Postgres on `localhost:5432` with:
 
-- user: `roamly`
-- password: `roamly`
-- database: `roamly_dev`
+- user: `trove`
+- password: `trove`
+- database: `trove_dev`
 
 Example local env var:
 
 ```bash
-DATABASE_URL=postgres://roamly:roamly@localhost:5432/roamly_dev
+DATABASE_URL=postgres://trove:trove@localhost:5432/trove_dev
 ```
 
 ---
@@ -77,19 +77,19 @@ By default the server listens on `http://localhost:4000`. The Vite dev server ca
 
 ### 4. Auth architecture and Supabase decisions
 
-We intentionally split responsibilities between **Supabase Auth** and the **Roamly backend**:
+We intentionally split responsibilities between **Supabase Auth** and the **Trove backend**:
 
 - **Supabase Auth**:
   - Handles all OAuth provider flows (Google, GitHub, Apple, etc.).
   - Manages `auth.users` table and provider tokens.
   - Is never called directly from the frontend with service role keys.
 
-- **Roamly backend**:
+- **Trove backend**:
   - Owns the Express API and the `public.users` profile table.
   - Uses a Supabase **service role** client (`supabaseAdmin`) only on the server to:
     - Exchange OAuth `code` for Supabase sessions.
     - Read/write rows in application tables (e.g., `public.users`).
-  - Issues its own **JWT** and stores it in an HttpOnly cookie (`roamly_session`) to authenticate and authorize requests.
+  - Issues its own **JWT** and stores it in an HttpOnly cookie (`trove_session`) to authenticate and authorize requests.
 
 Flow:
 
@@ -97,9 +97,9 @@ Flow:
 2. User is redirected to Supabase Auth, completes OAuth, and Supabase redirects back to `APP_OAUTH_REDIRECT_URL` with a `code`.
 3. Backend handles `GET /api/auth/oauth/callback`:
    - Calls `supabaseAdmin.auth.exchangeCodeForSession(code)` to obtain a Supabase user.
-   - Upserts a row in `public.users` with id/email/display_name/avatar_url.
-   - Signs a JWT (`sub = user.id, email`) with `SESSION_SECRET`.
-   - Stores the JWT in secure HttpOnly cookie `roamly_session` and redirects to the frontend.
+  - Upserts a row in `public.users` with id/email/display_name/avatar_url.
+  - Signs a JWT (`sub = user.id, email`) with `SESSION_SECRET`.
+  - Stores the JWT in secure HttpOnly cookie `trove_session` and redirects to the frontend.
 4. Subsequent requests to user-scoped endpoints (e.g., `/api/me`, future itineraries/collections/passport routes) go through `requireAuth`, which:
    - Reads the JWT from header or cookie.
    - Verifies it using `SESSION_SECRET`.
@@ -108,7 +108,7 @@ Flow:
 This design keeps:
 
 - OAuth and identity management in Supabase.
-- Application-level authorization and user-scoped queries in the Roamly backend.
+- Application-level authorization and user-scoped queries in the Trove backend.
 - Service role keys never exposed to browsers.
 
 ---
@@ -124,7 +124,7 @@ cp backend/.env.example backend/.env
 At minimum it should define:
 
 ```bash
-DATABASE_URL=postgres://USER:PASSWORD@HOST:PORT/roamly_dev
+DATABASE_URL=postgres://USER:PASSWORD@HOST:PORT/trove_dev
 NODE_ENV=development
 PORT=4000
 SUPABASE_URL=https://your-project.supabase.co
@@ -157,10 +157,10 @@ The following endpoints are implemented today:
 
 - `GET /api/auth/oauth/callback`
   - Query: `code` (from Supabase).
-  - Behavior: exchanges `code` for Supabase session, upserts into `public.users`, sets `roamly_session` cookie, and redirects to `/`.
+  - Behavior: exchanges `code` for Supabase session, upserts into `public.users`, sets `trove_session` cookie, and redirects to `/`.
 
 - `POST /api/auth/logout`
-  - Clears `roamly_session` cookie and returns 204.
+  - Clears `trove_session` cookie and returns 204.
 
 - `GET /api/me`
   - Protected by `requireAuth`.
@@ -207,7 +207,7 @@ We use Supabase Auth + Google OAuth, with a **PKCE code flow** initiated from th
   - Reads the `code` query parameter and calls:
     `supabaseAdmin.auth.exchangeCodeForSession(code)` to obtain a Supabase session and user.
   - Upserts the user into `public.users`.
-  - Issues its own JWT and stores it in the `roamly_session` HttpOnly cookie.
+  - Issues its own JWT and stores it in the `trove_session` HttpOnly cookie.
   - Redirects back to the frontend (e.g. `/`).
 
 **Important:**

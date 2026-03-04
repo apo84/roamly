@@ -31,7 +31,7 @@ export default function AuthCallback() {
         if (res.ok && body?.user) {
           // Make the user profile available to the frontend (for now via localStorage).
           // Consumers can read this and/or use a dedicated hook later.
-          localStorage.setItem("roamlyCurrentUser", JSON.stringify(body.user));
+          localStorage.setItem("troveCurrentUser", JSON.stringify(body.user));
         } else {
           // eslint-disable-next-line no-console
           console.warn("AuthCallback: /api/me did not return a user", res.status, body);

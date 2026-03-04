@@ -1,6 +1,6 @@
 ---
-name: Roamly backend & storage architecture
-overview: Design a cloud-hosted backend and storage system for Roamly, choosing between relational and NoSQL, modeling users, videos, locations, and itineraries, and defining how this backend connects to the existing React frontend.
+name: Trove backend & storage architecture
+overview: Design a cloud-hosted backend and storage system for Trove, choosing between relational and NoSQL, modeling users, videos, locations, and itineraries, and defining how this backend connects to the existing React frontend.
 todos:
   - id: design-schema
     content: Design detailed PostgreSQL schema for users, videos, locations, itineraries, passport entries, and supporting tables
@@ -8,7 +8,7 @@ todos:
 isProject: false
 ---
 
-# Roamly Backend & Storage Plan
+# Trove Backend & Storage Plan
 
 ## 1. High-level choices
 
@@ -52,99 +52,106 @@ At MVP we can merge Creator into Video and skip Creator table if desired, but th
 
 This is conceptual; the AI agent will translate into actual SQL migrations/ORM models.
 
-- **users**
-  - `id` (PK, UUID)
-  - `email` (unique, nullable if third-party auth only)
-  - `display_name`
-  - `avatar_url`
-  - `auth_provider` (enum: google, apple, local, etc.)
-  - `created_at`, `updated_at`
-- **creators**
-  - `id` (PK, UUID)
-  - `handle` (e.g. `travelwithsara`)
-  - `platform` (enum: instagram, tiktok, youtube)
-  - `display_name`
-  - `avatar_url`
-  - `social_url` (link to profile)
-- **videos**
-  - `id` (PK, UUID)
-  - `external_id` (ID on platform, indexed)
-  - `platform` (enum)
-  - `title`
-  - `caption`
-  - `thumbnail_url`
-  - `video_url` (or embed URL)
-  - `creator_id` (FK → creators.id)
-  - `like_count`, `view_count` (bigint)
-  - `category` (enum: food, nightlife, attractions, nature, culture, adventure)
-  - `created_at` (on platform)
-  - `ingested_at` (when we stored it)
-  - `raw_metadata` (JSONB for any extra fields from TikTok/Instagram APIs)
-- **locations**
-  - `id` (PK, UUID)
-  - `name`
-  - `city`
-  - `country`
-  - `lat` (numeric)
-  - `lng` (numeric)
-  - `type` (enum: restaurant, landmark, cafe, hotel, beach, park, market, etc.)
-  - (Optionally) `address`, `google_place_id`, `osm_id` for future integrations.
-- **video_locations** (many-to-many mapping)
-  - `video_id` (FK → videos.id)
-  - `location_id` (FK → locations.id)
-  - Composite PK (`video_id`, `location_id`).
-- **hashtags**
-  - `id` (PK, UUID)
-  - `tag` (text, unique, lowercase)
-- **video_hashtags**
-  - `video_id` (FK → videos.id)
-  - `hashtag_id` (FK → hashtags.id)
-  - Composite PK (`video_id`, `hashtag_id`).
-- **collections**
-  - `id` (PK, UUID)
-  - `user_id` (FK → users.id, nullable for globally curated collections)
-  - `name`
-  - `cover_image_url`
-  - `city`
-  - `country`
-  - `is_curated` (boolean)
-  - `created_at`
-- **collection_items**
-  - `id` (PK, UUID)
-  - `collection_id` (FK → collections.id)
-  - `video_id` (FK → videos.id)
-  - `location_id` (FK → locations.id, nullable)
-  - `position` (integer for ordering)
-- **itineraries**
-  - `id` (PK, UUID)
-  - `user_id` (FK → users.id)
-  - `title`
-  - `city`
-  - `country`
-  - `start_date`, `end_date`
-  - `created_at`, `updated_at`
-- **itinerary_items**
-  - `id` (PK, UUID)
-  - `itinerary_id` (FK → itineraries.id)
-  - `location_id` (FK → locations.id)
-  - `video_id` (FK → videos.id, nullable)
-  - `order_index` (integer)
-  - `walking_distance_meters` (integer)
-  - `walking_time_minutes` (integer)
-  - `checked_in` (boolean)
-- **passport_entries**
-  - `id` (PK, UUID)
-  - `user_id` (FK → users.id)
-  - `location_id` (FK → locations.id)
-  - `video_id` (FK → videos.id, nullable)
-  - `checked_in_at` (timestamptz)
-  - `note` (text)
-  - `photo_url` (nullable)
-- **user_saved_videos** (optional but likely useful)
-  - `user_id` (FK → users.id)
-  - `video_id` (FK → videos.id)
-  - `saved_at`
-  - Composite PK (`user_id`, `video_id`).
+**users**
+  id: uuid (PK, references auth.users.id if you tie to Supabase Auth)
+  email: text (unique)
+  display_name: text
+  avatar_url: text (URL)
+  auth_provider: text or varchar/enum ('google' | 'apple' | 'local' | ...)
+  created_at: timestamptz (defaults now())
+  updated_at: timestamptz (defaults now() / trigger)
+**creators**
+  id: uuid (PK)
+  handle: text
+  platform: text or enum ('instagram' | 'tiktok' | 'youtube' | ...)
+  display_name: text
+  avatar_url: text
+  social_url: text
+**videos**
+  id: uuid (PK)
+  external_id: text (indexed)
+  platform: text or enum
+  title: text
+  caption: text
+  thumbnail_url: text
+  video_url: text
+  creator_id: uuid (FK → creators.id)
+  like_count: bigint
+  view_count: bigint
+  category: text or enum ('food' | 'nightlife' | 'attractions' | 'nature' | 'culture' | 'adventure')
+  created_at: timestamptz (platform publish time)
+  ingested_at: timestamptz (defaults now())
+  raw_metadata: jsonb
+**locations**
+  id: uuid (PK)
+  name: text
+  city: text
+  country: text
+  lat: double precision (or numeric(9,6))
+  lng: double precision (or numeric(9,6))
+  type: text or enum ('restaurant' | 'landmark' | 'cafe' | 'hotel' | 'beach' | 'park' | 'market')
+  (optional) address: text
+  (optional) google_place_id: text
+  (optional) osm_id: text
+  video_locations
+  video_id: uuid (FK → videos.id)
+  location_id: uuid (FK → locations.id)
+  Composite PK: (video_id, location_id)
+**hashtags**
+  id: uuid (PK)
+  tag: text (unique, lowercase)
+  video_hashtags
+  video_id: uuid (FK → videos.id)
+  hashtag_id: uuid (FK → hashtags.id)
+  Composite PK: (video_id, hashtag_id)
+**collections**
+  id: uuid (PK)
+  user_id: uuid (FK → users.id, nullable for global/curated)
+  name: text
+  city: text
+  country: text
+  cover_image_url: text
+  is_curated: boolean (default false)
+  created_at: timestamptz (default now())
+  collection_items
+  id: uuid (PK)
+  collection_id: uuid (FK → collections.id)
+  video_id: uuid (FK → videos.id)
+  location_id: uuid (FK → locations.id, nullable)
+  position: integer
+**itineraries**
+  id: uuid (PK)
+  user_id: uuid (FK → users.id)
+  title: text
+  city: text
+  country: text
+  start_date: date (nullable)
+  end_date: date (nullable)
+  created_at: timestamptz
+  updated_at: timestamptz
+**itinerary_items**
+  id: uuid (PK)
+  itinerary_id: uuid (FK → itineraries.id)
+  location_id: uuid (FK → locations.id)
+  video_id: uuid (FK → videos.id, nullable)
+  order_index: integer
+  walking_distance_meters: integer
+  walking_time_minutes: integer
+  checked_in: boolean
+  added_at: timestamptz
+**passport_entries**
+  id: uuid (PK)
+  user_id: uuid (FK → users.id)
+  location_id: uuid (FK → locations.id)
+  video_id: uuid (FK → videos.id, nullable)
+  checked_in_at: timestamptz
+  note: text (nullable)
+  photo_url: text (nullable)
+  user_saved_videos
+  user_id: uuid (FK → users.id)
+  video_id: uuid (FK → videos.id)
+  saved_at: timestamptz (default now())
+  Composite PK: (user_id, video_id)
 
 Use **indexes** on common filters: `(city, country)` on `locations`, `platform, external_id` on `videos`, `user_id` on user-owned tables, etc.
 
@@ -155,7 +162,7 @@ Use **indexes** on common filters: `(city, country)` on `locations`, `platform, 
 ### 3.1 Database
 
 - Use a managed Postgres instance (e.g. Supabase, Neon, or AWS RDS PostgreSQL).
-- Create a single `roamly` database with:
+- Create a single `trove` database with:
   - `app` schema for application tables above.
   - Optional `auth` schema if using hosted auth provider that stores tokens/refresh data.
 - Enable extensions as needed:
@@ -166,9 +173,9 @@ Use **indexes** on common filters: `(city, country)` on `locations`, `platform, 
 
 - Don’t store raw video files in Postgres.
 - Use cloud object storage (e.g. AWS S3 or equivalent) with buckets:
-  - `roamly-videos` (original or proxied video files, if we ever host copies).
-  - `roamly-thumbnails` (thumbnails and any generated images).
-  - `roamly-user-media` (passport photos, user-uploaded assets).
+  - `trove-videos` (original or proxied video files, if we ever host copies).
+  - `trove-thumbnails` (thumbnails and any generated images).
+  - `trove-user-media` (passport photos, user-uploaded assets).
 - Store only URLs and metadata (dimensions, duration) in the `videos` and `passport_entries` tables.
 
 ### 3.3 Secrets & config
@@ -257,7 +264,7 @@ The current schema already supports those with `raw_metadata` and flexible IDs.
 
 ```mermaid
 flowchart TD
-  browser[RoamlyFrontend
+  browser[TroveFrontend
   (React+Vite)] --> api[BackendAPI
   (Node+TypeScript)]
   api --> db[PostgreSQL
@@ -268,7 +275,7 @@ flowchart TD
 
 
 
-- Frontend remains a static SPA (e.g. deployed via Vercel/Netlify or equivalent), configured to talk to `https://api.roamly.app`.
+- Frontend remains a static SPA (e.g. deployed via Vercel/Netlify or equivalent), configured to talk to `https://api.trove.app`.
 - Backend is a containerized Node service, deployed to a cloud runtime (e.g. AWS ECS/Fargate, Fly.io, Render); it connects to the managed Postgres instance and object storage via private network or secure credentials.
 
 ### 6.2 Local development
@@ -310,4 +317,178 @@ flowchart TD
   - Add integration tests for key endpoints (e.g., fetch explore feed, create itinerary, add passport entry).
   - Verify that UI flows (explore, map, collections, itinerary, passport) work end-to-end against the DB.
 
-This plan gives a relational Postgres-backed architecture that fits Roamly’s structured, geo-heavy data and MVP scale, with a clear roadmap for an AI agent (or human) to implement the cloud-hosted backend and connect it to the existing frontend.
+This plan gives a relational Postgres-backed architecture that fits Trove’s structured, geo-heavy data and MVP scale, with a clear roadmap for an AI agent (or human) to implement the cloud-hosted backend and connect it to the existing frontend.
+
+
+# Supabase sql table creation
+
+-- ------------------------------------
+-- ENUM TYPES
+-- ------------------------------------
+
+CREATE TYPE platform_enum AS ENUM ('instagram', 'tiktok', 'youtube');
+CREATE TYPE category_enum AS ENUM ('food', 'nightlife', 'attractions', 'nature', 'culture', 'adventure');
+CREATE TYPE location_type_enum AS ENUM ('restaurant', 'landmark', 'cafe', 'hotel', 'beach', 'park', 'market');
+
+-- ------------------------------------
+-- BASE TABLES
+-- ------------------------------------
+
+-- Trove app users (travelers)
+CREATE TABLE public.users (
+  id          uuid PRIMARY KEY,
+  email       text UNIQUE,
+  display_name text,
+  avatar_url  text,
+  auth_provider text,          -- e.g. 'google', 'apple', 'local'
+  created_at  timestamptz NOT NULL DEFAULT now(),
+  updated_at  timestamptz NOT NULL DEFAULT now()
+);
+
+-- Social media content creators
+CREATE TABLE public.creators (
+  id          uuid PRIMARY KEY,
+  handle      text NOT NULL,
+  platform    platform_enum NOT NULL,
+  display_name text,
+  avatar_url  text,
+  social_url  text
+);
+
+-- Videos from social platforms
+CREATE TABLE public.videos (
+  id           uuid PRIMARY KEY,
+  external_id  text NOT NULL,
+  platform     platform_enum NOT NULL,
+  title        text NOT NULL,
+  caption      text,
+  thumbnail_url text,
+  video_url    text,
+  creator_id   uuid REFERENCES public.creators(id) ON DELETE SET NULL,
+  like_count   bigint NOT NULL DEFAULT 0,
+  view_count   bigint NOT NULL DEFAULT 0,
+  category     category_enum,
+  created_at   timestamptz,        -- when published on platform
+  ingested_at  timestamptz NOT NULL DEFAULT now(),
+  raw_metadata jsonb,
+
+  CONSTRAINT videos_platform_external_id_uniq UNIQUE (platform, external_id)
+);
+
+-- Locations (places on the map)
+CREATE TABLE public.locations (
+  id          uuid PRIMARY KEY,
+  name        text NOT NULL,
+  city        text NOT NULL,
+  country     text NOT NULL,
+  lat         double precision NOT NULL,
+  lng         double precision NOT NULL,
+  type        location_type_enum,
+  address     text,
+  google_place_id text,
+  osm_id      text
+  -- Later: add PostGIS point column if you enable PostGIS
+  -- point      geography(Point, 4326)
+);
+
+-- Hashtags (normalized, without '#')
+CREATE TABLE public.hashtags (
+  id   uuid PRIMARY KEY,
+  tag  text NOT NULL UNIQUE
+);
+
+-- User collections of videos
+CREATE TABLE public.collections (
+  id             uuid PRIMARY KEY,
+  user_id        uuid REFERENCES public.users(id) ON DELETE CASCADE,
+  name           text NOT NULL,
+  city           text,
+  country        text,
+  cover_image_url text,
+  is_curated     boolean NOT NULL DEFAULT false,
+  created_at     timestamptz NOT NULL DEFAULT now()
+);
+
+-- User itineraries (per trip/city)
+CREATE TABLE public.itineraries (
+  id          uuid PRIMARY KEY,
+  user_id     uuid NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  title       text NOT NULL,
+  city        text,
+  country     text,
+  start_date  date,
+  end_date    date,
+  created_at  timestamptz NOT NULL DEFAULT now(),
+  updated_at  timestamptz NOT NULL DEFAULT now()
+);
+
+-- Passport entries (check-ins)
+CREATE TABLE public.passport_entries (
+  id            uuid PRIMARY KEY,
+  user_id       uuid NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  location_id   uuid NOT NULL REFERENCES public.locations(id) ON DELETE CASCADE,
+  video_id      uuid REFERENCES public.videos(id) ON DELETE SET NULL,
+  checked_in_at timestamptz NOT NULL DEFAULT now(),
+  note          text,
+  photo_url     text
+);
+
+-- Optional: social connections for syncing saves from TikTok/Instagram, etc.
+CREATE TABLE public.social_connections (
+  id              uuid PRIMARY KEY,
+  user_id         uuid NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  platform        platform_enum NOT NULL,
+  access_token    text,
+  refresh_token   text,
+  expires_at      timestamptz,
+  created_at      timestamptz NOT NULL DEFAULT now(),
+  updated_at      timestamptz NOT NULL DEFAULT now()
+);
+
+-- Users saving videos (likes/favorites)
+CREATE TABLE public.user_saved_videos (
+  user_id   uuid NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  video_id  uuid NOT NULL REFERENCES public.videos(id) ON DELETE CASCADE,
+  saved_at  timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (user_id, video_id)
+);
+
+-- ------------------------------------
+-- JOIN / DETAIL TABLES
+-- ------------------------------------
+
+-- Many-to-many: videos ↔ locations
+CREATE TABLE public.video_locations (
+  video_id    uuid NOT NULL REFERENCES public.videos(id) ON DELETE CASCADE,
+  location_id uuid NOT NULL REFERENCES public.locations(id) ON DELETE CASCADE,
+  PRIMARY KEY (video_id, location_id)
+);
+
+-- Many-to-many: videos ↔ hashtags
+CREATE TABLE public.video_hashtags (
+  video_id   uuid NOT NULL REFERENCES public.videos(id) ON DELETE CASCADE,
+  hashtag_id uuid NOT NULL REFERENCES public.hashtags(id) ON DELETE CASCADE,
+  PRIMARY KEY (video_id, hashtag_id)
+);
+
+-- Items inside a collection
+CREATE TABLE public.collection_items (
+  id            uuid PRIMARY KEY,
+  collection_id uuid NOT NULL REFERENCES public.collections(id) ON DELETE CASCADE,
+  video_id      uuid NOT NULL REFERENCES public.videos(id) ON DELETE CASCADE,
+  location_id   uuid REFERENCES public.locations(id) ON DELETE SET NULL,
+  position      integer NOT NULL
+);
+
+-- Stops within an itinerary (ordered)
+CREATE TABLE public.itinerary_items (
+  id                      uuid PRIMARY KEY,
+  itinerary_id            uuid NOT NULL REFERENCES public.itineraries(id) ON DELETE CASCADE,
+  location_id             uuid NOT NULL REFERENCES public.locations(id) ON DELETE CASCADE,
+  video_id                uuid REFERENCES public.videos(id) ON DELETE SET NULL,
+  order_index             integer NOT NULL,
+  walking_distance_meters integer,
+  walking_time_minutes    integer,
+  checked_in              boolean NOT NULL DEFAULT false,
+  added_at                timestamptz NOT NULL DEFAULT now()
+);

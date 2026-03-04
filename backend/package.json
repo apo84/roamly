@@ -1,5 +1,5 @@
 {
-  "name": "roamly-backend",
+  "name": "trove-backend",
   "version": "0.1.0",
   "private": true,
   "main": "dist/server.js",
@@ -16,7 +16,7 @@
     "express": "^4.22.1",
     "jsonwebtoken": "^9.0.3"
   },
-  "description": "This directory contains the backend and storage configuration for Roamly.",
+  "description": "This directory contains the backend and storage configuration for Trove.",
   "keywords": [],
   "author": "",
   "license": "ISC",

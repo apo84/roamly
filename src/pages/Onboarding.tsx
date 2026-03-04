@@ -37,7 +37,7 @@ export default function Onboarding() {
                 <div className="w-14 h-14 rounded-2xl bg-primary flex items-center justify-center mx-auto mb-4">
                   <MapPin className="w-7 h-7 text-primary-foreground" />
                 </div>
-                <h1 className="font-display text-3xl font-bold">Welcome to Roamly</h1>
+                <h1 className="font-display text-3xl font-bold">Welcome to Trove</h1>
                 <p className="text-muted-foreground mt-2 font-sans">Discover destinations through short-form video</p>
               </div>
 
