@@ -41,7 +41,7 @@ export default function Index() {
               custom={2}
               className="text-lg md:text-xl text-primary-foreground/80 max-w-xl mx-auto font-sans"
             >
-              Roamly maps travel videos from TikTok, Reels & more — so you can discover, save, and plan trips from the content you love.
+              Trove maps travel videos from TikTok, Reels & more — so you can discover, save, and plan trips from the content you love.
             </motion.p>
             <motion.div variants={fadeUp} custom={3} className="flex items-center justify-center gap-3 pt-2">
               <Link to="/explore">
@@ -162,9 +162,9 @@ export default function Index() {
             <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
               <MapPin className="w-4 h-4 text-primary-foreground" />
             </div>
-            <span className="font-display text-lg font-bold">Roamly</span>
+            <span className="font-display text-lg font-bold">Trove</span>
           </div>
-          <p className="text-sm text-muted-foreground">© 2026 Roamly. Discover the world, one reel at a time.</p>
+          <p className="text-sm text-muted-foreground">© 2026 Trove. Discover the world, one reel at a time.</p>
         </div>
       </footer>
     </main>

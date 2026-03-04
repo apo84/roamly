@@ -3,17 +3,17 @@ version: "3.9"
 services:
   db:
     image: postgis/postgis:16-3.4
-    container_name: roamly-postgres
+    container_name: trove-postgres
     environment:
-      POSTGRES_USER: roamly
-      POSTGRES_PASSWORD: roamly
-      POSTGRES_DB: roamly_dev
+      POSTGRES_USER: trove
+      POSTGRES_PASSWORD: trove
+      POSTGRES_DB: trove_dev
     ports:
       - "5432:5432"
     volumes:
       - db_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U roamly"]
+      test: ["CMD-SHELL", "pg_isready -U trove"]
       interval: 10s
       timeout: 5s
       retries: 5

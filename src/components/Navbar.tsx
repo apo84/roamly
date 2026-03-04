@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { MapPin, Compass, Heart, Map, Menu, X, Search, Award, Route } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/lib/supabaseClient";
 
 const navLinks = [
   { to: "/explore", label: "Explore", icon: Compass },
@@ -16,6 +17,15 @@ export default function Navbar() {
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
 
+  const handleSignInWithGoogle = async () => {
+    await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: "http://localhost:8080/auth/callback",
+      },
+    });
+  };
+
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-card/80 backdrop-blur-xl border-b border-border">
       <div className="container mx-auto flex items-center justify-between h-16 px-4">
@@ -24,7 +34,7 @@ export default function Navbar() {
             <MapPin className="w-5 h-5 text-primary-foreground" />
           </div>
           <span className="font-display text-xl font-bold tracking-tight text-foreground">
-            Roamly
+            Trove
           </span>
         </Link>
 
@@ -51,7 +61,7 @@ export default function Navbar() {
           <Button variant="ghost" size="icon">
             <Search className="w-4 h-4" />
           </Button>
-          <Button variant="default" size="sm" className="font-sans">
+          <Button variant="default" size="sm" className="font-sans" onClick={handleSignInWithGoogle}>
             Sign In
           </Button>
         </div>
@@ -85,7 +95,16 @@ export default function Navbar() {
                   </Button>
                 </Link>
               ))}
-              <Button variant="default" className="mt-2 font-sans">Sign In</Button>
+              <Button
+                variant="default"
+                className="mt-2 font-sans"
+                onClick={() => {
+                  setMobileOpen(false);
+                  void handleSignInWithGoogle();
+                }}
+              >
+                Sign In
+              </Button>
             </div>
           </motion.div>
         )}

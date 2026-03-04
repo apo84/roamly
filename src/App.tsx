@@ -17,6 +17,7 @@ import Passport from "./pages/Passport";
 import SyncError from "./pages/SyncError";
 import NoResults from "./pages/NoResults";
 import NotFound from "./pages/NotFound";
+import AuthCallback from "./pages/AuthCallback";
 
 const queryClient = new QueryClient();
 
@@ -40,6 +41,7 @@ const App = () => (
           <Route path="/passport" element={<Passport />} />
           <Route path="/sync-error" element={<SyncError />} />
           <Route path="/no-results" element={<NoResults />} />
+          <Route path="/auth/callback" element={<AuthCallback />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

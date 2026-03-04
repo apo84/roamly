@@ -64,7 +64,7 @@ export const barcelonaVideos: Video[] = [
 
 export const curatedFeed = {
   title: "Top 50 Hidden Gems — Barcelona",
-  description: "Curated by the Roamly team from 2,400+ creator videos",
+  description: "Curated by the Trove team from 2,400+ creator videos",
   videos: barcelonaVideos,
 };
 
