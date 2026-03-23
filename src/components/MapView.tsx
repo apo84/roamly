@@ -22,7 +22,7 @@ export default function MapView({ className = "" }: { className?: string }) {
   useEffect(() => {
     if (!mapRef.current || mapInstance.current) return;
 
-    const map = L.map(mapRef.current).setView([30, 20], 2);
+    const map = L.map(mapRef.current, { minZoom: 1 }).setView([30, 20], 2);
     mapInstance.current = map;
 
     L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
@@ -50,8 +50,8 @@ export default function MapView({ className = "" }: { className?: string }) {
   }, []);
 
   return (
-    <div className={`rounded-2xl overflow-hidden shadow-card h-full ${className}`}>
-      <div ref={mapRef} className="w-full h-full" style={{ minHeight: "400px" }} />
+    <div className={`overflow-hidden h-full ${className}`}>
+      <div ref={mapRef} className="w-full h-full min-h-0" />
     </div>
   );
 }

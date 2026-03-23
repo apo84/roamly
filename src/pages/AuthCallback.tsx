@@ -1,9 +1,11 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabaseClient";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function AuthCallback() {
   const navigate = useNavigate();
+  const { setUser } = useAuth();
 
   useEffect(() => {
     const finalize = async () => {
@@ -32,6 +34,7 @@ export default function AuthCallback() {
           // Make the user profile available to the frontend (for now via localStorage).
           // Consumers can read this and/or use a dedicated hook later.
           localStorage.setItem("troveCurrentUser", JSON.stringify(body.user));
+          setUser(body.user);
         } else {
           // eslint-disable-next-line no-console
           console.warn("AuthCallback: /api/me did not return a user", res.status, body);
@@ -45,7 +48,7 @@ export default function AuthCallback() {
     };
 
     void finalize();
-  }, [navigate]);
+  }, [navigate, setUser]);
 
   return (
     <main className="flex min-h-screen items-center justify-center">

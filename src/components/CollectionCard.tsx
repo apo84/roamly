@@ -1,13 +1,15 @@
 import { motion } from "framer-motion";
+import { Link } from "react-router-dom";
 import { Folder, MapPin } from "lucide-react";
 import type { Collection } from "@/data/mockData";
 
 export default function CollectionCard({ collection }: { collection: Collection }) {
   return (
-    <motion.div
-      whileHover={{ y: -4 }}
-      className="group relative rounded-2xl overflow-hidden bg-card shadow-card cursor-pointer"
-    >
+    <Link to={`/collections/${collection.id}`}>
+      <motion.div
+        whileHover={{ y: -4 }}
+        className="group relative rounded-2xl overflow-hidden bg-card shadow-card cursor-pointer"
+      >
       <div className="relative aspect-[4/3] overflow-hidden">
         <img
           src={collection.coverImage}
@@ -19,8 +21,10 @@ export default function CollectionCard({ collection }: { collection: Collection 
         <div className="absolute bottom-3 left-3 right-3">
           <h3 className="font-display text-lg font-bold text-primary-foreground">{collection.name}</h3>
           <div className="flex items-center gap-2 text-primary-foreground/80 text-sm mt-1">
-            <MapPin className="w-3.5 h-3.5" />
-            <span>{collection.city}, {collection.country}</span>
+            <MapPin className="w-3.5 h-3.5 shrink-0" />
+            <span>
+              {[collection.city, collection.country].filter(Boolean).join(", ") || "No location"}
+            </span>
           </div>
         </div>
       </div>
@@ -29,5 +33,6 @@ export default function CollectionCard({ collection }: { collection: Collection 
         <span>{collection.videoCount} videos</span>
       </div>
     </motion.div>
+    </Link>
   );
 }

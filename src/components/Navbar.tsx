@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { MapPin, Compass, Heart, Map, Menu, X, Search, Award, Route } from "lucide-react";
+import { MapPin, Compass, Heart, Map, Menu, X, Search, Award, Route, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/lib/supabaseClient";
+import { useAuth } from "@/contexts/AuthContext";
 
 const navLinks = [
   { to: "/explore", label: "Explore", icon: Compass },
@@ -16,6 +17,7 @@ const navLinks = [
 export default function Navbar() {
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { isAuthenticated, signOut } = useAuth();
 
   const handleSignInWithGoogle = async () => {
     await supabase.auth.signInWithOAuth({
@@ -61,9 +63,21 @@ export default function Navbar() {
           <Button variant="ghost" size="icon">
             <Search className="w-4 h-4" />
           </Button>
-          <Button variant="default" size="sm" className="font-sans" onClick={handleSignInWithGoogle}>
-            Sign In
-          </Button>
+          {isAuthenticated ? (
+            <Button
+              variant="outline"
+              size="sm"
+              className="font-sans gap-2"
+              onClick={() => void signOut()}
+            >
+              <LogOut className="w-4 h-4" />
+              Sign out
+            </Button>
+          ) : (
+            <Button variant="default" size="sm" className="font-sans" onClick={handleSignInWithGoogle}>
+              Sign In
+            </Button>
+          )}
         </div>
 
         {/* Mobile toggle */}
@@ -95,16 +109,30 @@ export default function Navbar() {
                   </Button>
                 </Link>
               ))}
-              <Button
-                variant="default"
-                className="mt-2 font-sans"
-                onClick={() => {
-                  setMobileOpen(false);
-                  void handleSignInWithGoogle();
-                }}
-              >
-                Sign In
-              </Button>
+              {isAuthenticated ? (
+                <Button
+                  variant="outline"
+                  className="mt-2 font-sans gap-2"
+                  onClick={() => {
+                    setMobileOpen(false);
+                    void signOut();
+                  }}
+                >
+                  <LogOut className="w-4 h-4" />
+                  Sign out
+                </Button>
+              ) : (
+                <Button
+                  variant="default"
+                  className="mt-2 font-sans"
+                  onClick={() => {
+                    setMobileOpen(false);
+                    void handleSignInWithGoogle();
+                  }}
+                >
+                  Sign In
+                </Button>
+              )}
             </div>
           </motion.div>
         )}
