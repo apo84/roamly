@@ -5,7 +5,7 @@ import { Link, useParams } from "react-router-dom";
 import { supabase } from "@/lib/supabaseClient";
 import { Button } from "@/components/ui/button";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
+const API_URL = import.meta.env.VITE_API_URL as string | undefined;
 const VIDEO_PLACEHOLDER =
   "https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=400&h=600&fit=crop";
 
@@ -34,6 +34,7 @@ interface CollectionDetailData {
 }
 
 async function fetchCollectionDetail(id: string): Promise<CollectionDetailData> {
+  if (!API_URL) throw new Error("Missing VITE_API_URL. Set it in .env.local or Vercel env vars.");
   const {
     data: { session },
   } = await supabase.auth.getSession();

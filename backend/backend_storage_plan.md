@@ -492,3 +492,27 @@ CREATE TABLE public.itinerary_items (
   checked_in              boolean NOT NULL DEFAULT false,
   added_at                timestamptz NOT NULL DEFAULT now()
 );
+
+---
+
+## Inspiration MVP — incremental columns & RLS (Agent 1)
+
+Applied via repo migration `supabase/migrations/20260328120000_inspiration_mvp_columns_and_rls.sql` (see `docs/supabase/INSPIRATION_MVP_AGENT1.md` for manual Supabase steps).
+
+**`collection_items`** (add if not already present from migration):
+
+- `user_note text` — per-trip “why” for this clip in this collection.
+- `visit_start date`, `visit_end date` — optional trip window for the item.
+
+**`user_saved_videos`**:
+
+- `user_note text` — library-level note; UI should prefer `collection_items.user_note` when both exist.
+
+**`videos`**:
+
+- `canonical_url text` — normalized / pasted URL; partial unique index where not null (dedupe / open-in-app).
+
+**RLS (Track B — Express + service role):**
+
+- `user_saved_videos`, `collections`, `collection_items`: authenticated users may only access rows tied to `auth.uid()` (ownership / collection ownership).
+- `videos`: RLS enabled, **no** policies for `authenticated` / `anon` → default deny; backend **service role** bypasses RLS for ingest.

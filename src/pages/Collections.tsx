@@ -7,11 +7,12 @@ import { Button } from "@/components/ui/button";
 import CollectionCard from "@/components/CollectionCard";
 import type { Collection } from "@/data/mockData";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
+const API_URL = import.meta.env.VITE_API_URL as string | undefined;
 const COLLECTION_PLACEHOLDER_IMAGE =
   "https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=400&h=300&fit=crop";
 
 async function fetchCollections(): Promise<Collection[]> {
+  if (!API_URL) throw new Error("Missing VITE_API_URL. Set it in .env.local or Vercel env vars.");
   const {
     data: { session },
   } = await supabase.auth.getSession();

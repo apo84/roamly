@@ -52,6 +52,7 @@ The backend is a standalone Node + TypeScript project under `backend/` with:
   - `dev` – run `src/server.ts` via `tsx`.
   - `build` – compile TypeScript (`tsc`) to `dist/`.
   - `start` – run compiled server (`node dist/server.js`).
+  - `worker:geotag` – poll `geotag_jobs` and run Gemini + Geocoding pipeline (see `docs/backend/GEOTAG.md`).
 - `tsconfig.json` – TypeScript config compiling `src` to `dist`.
 - `src/`:
   - `server.ts` – Express bootstrap and route mounting.

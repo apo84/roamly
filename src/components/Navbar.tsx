@@ -20,10 +20,16 @@ export default function Navbar() {
   const { isAuthenticated, signOut } = useAuth();
 
   const handleSignInWithGoogle = async () => {
+    const appUrl = import.meta.env.VITE_APP_URL as string | undefined;
+    if (!appUrl) {
+      // eslint-disable-next-line no-console
+      console.error("Missing VITE_APP_URL. Set it in .env.local or Vercel env vars.");
+      return;
+    }
     await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: "http://localhost:8080/auth/callback",
+        redirectTo: `${appUrl}/auth/callback`,
       },
     });
   };

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
+const API_URL = import.meta.env.VITE_API_URL as string | undefined;
 
 export default function CreateCollection() {
   const navigate = useNavigate();
@@ -20,6 +20,10 @@ export default function CreateCollection() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    if (!API_URL) {
+      setError("Missing VITE_API_URL. Set it in .env.local or Vercel env vars.");
+      return;
+    }
     const trimmedName = name.trim();
     if (!trimmedName) {
       setError("Name is required");

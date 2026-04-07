@@ -20,7 +20,7 @@ The backend is a separate Node project located in `backend/` with its own `packa
 ## Project layout
 
 - `backend/`
-  - `package.json` – backend dependencies and scripts (`dev`, `build`, `start`).
+  - `package.json` – backend dependencies and scripts (`dev`, `build`, `start`, `test`).
   - `tsconfig.json` – TypeScript config (`src` → `dist`).
   - `.env.example` – example environment for local development.
   - `docker-compose.yml` – Postgres/PostGIS container for local DB.
@@ -35,6 +35,9 @@ The backend is a separate Node project located in `backend/` with its own `packa
       - `health.ts` – health check endpoint.
       - `auth.ts` – legacy OAuth routes (currently unused in the PKCE flow).
       - `me.ts` – current-user profile endpoint and backend-owned upsert into `public.users`.
+      - `collections.ts` – create/list/detail collections (user-scoped).
+      - `inspiration.ts` – travel-link ingest, unfurl preview, library + collection item listing (`/api/inspiration/*`).
+    - `services/inspiration/` – URL allowlist, redirect resolution, social URL parsing, unfurl (oEmbed + OG).
 
 Build & run:
 
@@ -44,6 +47,7 @@ npm install      # if not already done
 npm run dev      # runs src/server.ts via tsx
 npm run build    # tsc → dist/
 npm start        # node dist/server.js
+npm test         # vitest: inspiration URL parser + allowlist
 ```
 
 ---
@@ -102,7 +106,7 @@ High-level flow:
    supabase.auth.signInWithOAuth({
      provider: "google",
      options: {
-       redirectTo: "http://localhost:8080/auth/callback",
+      redirectTo: `${import.meta.env.VITE_APP_URL}/auth/callback`,
      },
    });
    ```
@@ -111,7 +115,7 @@ High-level flow:
 3. Supabase exchanges the Google code for a Supabase session and redirects the browser to:
 
    ```text
-   http://localhost:8080/auth/callback?code=...
+  ${import.meta.env.VITE_APP_URL}/auth/callback?code=...
    ```
 
 4. Frontend Supabase client is configured as:
@@ -254,6 +258,15 @@ Use this for uptime checks and simple liveness probes.
 
 ---
 
+## Inspiration (travel links) API
+
+- **Route file**: `backend/src/routes/inspiration.ts`
+- **Contract & operator notes**: [docs/backend/INSPIRATION_MVP_AGENT2.md](../docs/backend/INSPIRATION_MVP_AGENT2.md)
+
+All `/api/inspiration/*` routes use `requireAuth` and **`supabaseAdmin` (service role)** to insert/update `public.videos` (RLS blocks direct client access to `videos`). Library and collection writes use the same admin client so inserts succeed regardless of RLS. Preview endpoints: `GET /api/inspiration/unfurl` and `POST /api/inspiration/parse`.
+
+---
+
 ## Server bootstrap
 
 - **File**: `backend/src/server.ts`
@@ -278,6 +291,8 @@ Key responsibilities:
   - `app.use("/api", healthRoutes);`
   - `app.use("/api/auth", authRoutes);`
   - `app.use("/api", meRoutes);`
+  - `app.use("/api", collectionsRoutes);`
+  - `app.use("/api", inspirationRoutes);`
 - Global error handler that logs errors and responds with `500` JSON.
 - Start HTTP server on `PORT` from `env`.
 
@@ -305,7 +320,7 @@ While this file focuses on the backend, it is useful for agents to understand th
     await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: "http://localhost:8080/auth/callback",
+        redirectTo: `${import.meta.env.VITE_APP_URL}/auth/callback`,
       },
     });
   };
@@ -324,12 +339,15 @@ While this file focuses on the backend, it is useful for agents to understand th
       }
 
       try {
-        const res = await fetch("http://localhost:4000/api/me", {
+        const res = await fetch(
+          `${import.meta.env.VITE_API_URL}/api/me`,
+          {
           method: "GET",
           headers: {
             Authorization: `Bearer ${data.session.access_token}`,
           },
-        });
+          },
+        );
 
         const body = await res.json().catch(() => null);
 
