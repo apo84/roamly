@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useLocalSearchParams } from "expo-router";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   FlatList,
   Pressable,
@@ -10,11 +11,14 @@ import {
 } from "react-native";
 
 import { VideoCard } from "../../components/VideoCard";
-import { categories, mockVideos } from "../../data/mockData";
+import { categories, mockVideos, type Video } from "../../data/mockData";
 import { colors, fonts, radius } from "../../theme";
 
 export default function ExploreScreen() {
   const { width } = useWindowDimensions();
+  const { clip } = useLocalSearchParams<{ clip?: string | string[] }>();
+  const clipId = typeof clip === "string" ? clip : Array.isArray(clip) ? clip[0] : undefined;
+  const listRef = useRef<FlatList<Video>>(null);
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
 
@@ -33,6 +37,16 @@ export default function ExploreScreen() {
     [search, activeCategory],
   );
 
+  useEffect(() => {
+    if (!clipId) return;
+    const idx = filtered.findIndex((v) => v.id === clipId);
+    if (idx < 0) return;
+    const t = setTimeout(() => {
+      listRef.current?.scrollToIndex({ index: idx, viewPosition: 0.15, animated: true });
+    }, 350);
+    return () => clearTimeout(t);
+  }, [clipId, filtered]);
+
   const gap = 12;
   const pad = 16;
   const colW = (width - pad * 2 - gap) / 2;
@@ -40,9 +54,15 @@ export default function ExploreScreen() {
   return (
     <View style={styles.screen}>
       <FlatList
+        ref={listRef}
         data={filtered}
         keyExtractor={(item) => item.id}
         numColumns={2}
+        onScrollToIndexFailed={({ index }) => {
+          setTimeout(() => {
+            listRef.current?.scrollToIndex({ index, viewPosition: 0.15, animated: true });
+          }, 400);
+        }}
         columnWrapperStyle={styles.columnWrap}
         contentContainerStyle={styles.listContent}
         ListHeaderComponent={
@@ -86,11 +106,24 @@ export default function ExploreScreen() {
         ListEmptyComponent={
           <Text style={styles.empty}>No videos match your search.</Text>
         }
-        renderItem={({ item }) => (
-          <View style={{ width: colW, marginBottom: gap }}>
-            <VideoCard video={item} />
-          </View>
-        )}
+        renderItem={({ item }) => {
+          const highlighted = clipId === item.id;
+          return (
+            <View
+              style={[
+                { width: colW, marginBottom: gap },
+                highlighted && {
+                  borderWidth: 2,
+                  borderColor: colors.primary,
+                  borderRadius: radius.lg,
+                  padding: 2,
+                },
+              ]}
+            >
+              <VideoCard video={item} />
+            </View>
+          );
+        }}
       />
     </View>
   );

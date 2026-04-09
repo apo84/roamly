@@ -1,13 +1,36 @@
 import { Image } from "expo-image";
+import { useCallback, useState } from "react";
+import { useFocusEffect } from "@react-navigation/native";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 
+import { PassportStampCard } from "../../components/PassportStampCard";
+import { PassportStampComposer } from "../../components/PassportStampComposer";
 import { SignInPrompt } from "../../components/SignInPrompt";
 import { useAuth } from "../../contexts/AuthContext";
-import { mockPassport } from "../../data/barcelonaData";
+import { barcelonaLocations, mockPassport } from "../../data/barcelonaData";
+import { loadAllPassportStamps, type PassportStamp } from "../../data/passportStamps";
 import { colors, fonts, radius } from "../../theme";
 
 export default function PassportScreen() {
   const { isAuthenticated, isReady } = useAuth();
+  const [stamps, setStamps] = useState<PassportStamp[]>([]);
+
+  const refreshStamps = useCallback(async () => {
+    const list = await loadAllPassportStamps();
+    setStamps(list);
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (isAuthenticated) {
+        void refreshStamps();
+      }
+    }, [isAuthenticated, refreshStamps]),
+  );
+
+  const totalLocations = barcelonaLocations.length;
+  const checkedIn = mockPassport.length;
+  const progress = totalLocations ? (checkedIn / totalLocations) * 100 : 0;
 
   if (!isReady) {
     return <View style={styles.screen} />;
@@ -19,10 +42,41 @@ export default function PassportScreen() {
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
-      <Text style={styles.h1}>Passport</Text>
-      <Text style={styles.lead}>
-        {mockPassport.length} check-ins · same mock entries as the web Passport page.
-      </Text>
+      <Text style={styles.h1}>Digital Passport</Text>
+      <Text style={styles.lead}>Your map of discovered gems — plus stamps you share as travel notes.</Text>
+
+      <View style={styles.statsCard}>
+        <View style={styles.statsTop}>
+          <View>
+            <Text style={styles.statsLabel}>Barcelona Explorer</Text>
+            <Text style={styles.statsValue}>
+              {checkedIn} / {totalLocations}{" "}
+              <Text style={styles.statsValueMuted}>gems found</Text>
+            </Text>
+          </View>
+          <View style={styles.ring}>
+            <Text style={styles.ringText}>{Math.round(progress)}%</Text>
+          </View>
+        </View>
+        <View style={styles.progressTrack}>
+          <View style={[styles.progressFill, { width: `${Math.min(100, progress)}%` }]} />
+        </View>
+        <Text style={styles.statsFoot}>1 city · {checkedIn} check-ins</Text>
+      </View>
+
+      <View style={styles.stampsHeader}>
+        <View style={styles.stampsTitleBlock}>
+          <Text style={styles.h2}>Stamps</Text>
+          <Text style={styles.stampsSub}>Blog-style posts with tappable clips & collections</Text>
+        </View>
+        <PassportStampComposer onPosted={setStamps} />
+      </View>
+
+      {stamps.map((stamp) => (
+        <PassportStampCard key={stamp.id} stamp={stamp} />
+      ))}
+
+      <Text style={[styles.h2, styles.journeyTitle]}>Your journey</Text>
       {mockPassport.map((entry, i) => (
         <View key={entry.id} style={styles.row}>
           <View style={styles.timeline}>
@@ -49,6 +103,19 @@ export default function PassportScreen() {
           </View>
         </View>
       ))}
+
+      <Text style={[styles.h2, styles.discoverTitle]}>Still to discover</Text>
+      <View style={styles.discoverGrid}>
+        {barcelonaLocations
+          .filter((loc) => !mockPassport.some((p) => p.location.id === loc.id))
+          .map((loc) => (
+            <View key={loc.id} style={styles.discoverCell}>
+              <Text style={styles.discoverPin}>📍</Text>
+              <Text style={styles.discoverName}>{loc.name}</Text>
+              <Text style={styles.discoverType}>{loc.type}</Text>
+            </View>
+          ))}
+      </View>
     </ScrollView>
   );
 }
@@ -60,7 +127,7 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 20,
-    paddingBottom: 32,
+    paddingBottom: 40,
   },
   h1: {
     fontFamily: fonts.display,
@@ -73,6 +140,89 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: colors.mutedForeground,
     marginBottom: 20,
+    lineHeight: 22,
+  },
+  statsCard: {
+    backgroundColor: colors.card,
+    borderRadius: radius.xl,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: 18,
+    marginBottom: 24,
+  },
+  statsTop: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  statsLabel: {
+    fontFamily: fonts.sans,
+    fontSize: 13,
+    color: colors.mutedForeground,
+  },
+  statsValue: {
+    fontFamily: fonts.display,
+    fontSize: 22,
+    color: colors.foreground,
+    marginTop: 4,
+  },
+  statsValueMuted: {
+    fontFamily: fonts.sans,
+    fontSize: 15,
+    color: colors.mutedForeground,
+  },
+  ring: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    borderWidth: 4,
+    borderColor: colors.primary,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  ringText: {
+    fontFamily: fonts.sansBold,
+    fontSize: 14,
+    color: colors.primary,
+  },
+  progressTrack: {
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: colors.muted,
+    overflow: "hidden",
+    marginBottom: 10,
+  },
+  progressFill: {
+    height: "100%",
+    borderRadius: 4,
+    backgroundColor: colors.primary,
+  },
+  statsFoot: {
+    fontFamily: fonts.sans,
+    fontSize: 12,
+    color: colors.mutedForeground,
+  },
+  stampsHeader: {
+    marginBottom: 16,
+    gap: 12,
+  },
+  stampsTitleBlock: {
+    gap: 4,
+  },
+  h2: {
+    fontFamily: fonts.display,
+    fontSize: 22,
+    color: colors.foreground,
+  },
+  stampsSub: {
+    fontFamily: fonts.sans,
+    fontSize: 14,
+    color: colors.mutedForeground,
+  },
+  journeyTitle: {
+    marginTop: 8,
+    marginBottom: 16,
   },
   row: {
     flexDirection: "row",
@@ -144,5 +294,40 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     borderTopWidth: 1,
     borderTopColor: colors.border,
+  },
+  discoverTitle: {
+    marginTop: 8,
+    marginBottom: 12,
+  },
+  discoverGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10,
+  },
+  discoverCell: {
+    width: "48%",
+    flexGrow: 1,
+    backgroundColor: colors.card,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderStyle: "dashed",
+    borderColor: colors.border,
+    padding: 12,
+  },
+  discoverPin: {
+    fontSize: 18,
+    marginBottom: 6,
+  },
+  discoverName: {
+    fontFamily: fonts.sansMedium,
+    fontSize: 14,
+    color: colors.foreground,
+  },
+  discoverType: {
+    fontFamily: fonts.sans,
+    fontSize: 12,
+    color: colors.mutedForeground,
+    textTransform: "capitalize",
+    marginTop: 2,
   },
 });

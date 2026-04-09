@@ -18,6 +18,7 @@ import Processing from "./pages/Processing";
 import TripMap from "./pages/TripMap";
 import ItineraryPage from "./pages/Itinerary";
 import Passport from "./pages/Passport";
+import CollectionSpotlight from "./pages/CollectionSpotlight";
 import SyncError from "./pages/SyncError";
 import NoResults from "./pages/NoResults";
 import NotFound from "./pages/NotFound";
@@ -65,6 +66,7 @@ const App = () => (
             <Route path="/sync" element={<ContentSync />} />
             <Route path="/processing" element={<Processing />} />
             <Route path="/trip/:city" element={<TripMap />} />
+            <Route path="/spotlight/collection/:id" element={<CollectionSpotlight />} />
             <Route
               path="/itinerary"
               element={

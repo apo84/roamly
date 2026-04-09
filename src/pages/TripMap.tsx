@@ -4,7 +4,7 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { X, Plus, Navigation, Play, Heart, ExternalLink, Route } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import { barcelonaVideos, barcelonaLocations } from "@/data/barcelonaData";
 import type { Video, Location } from "@/data/mockData";
 
@@ -93,6 +93,8 @@ function VideoPanel({ video, location, onClose, onAdd }: { video: Video; locatio
 }
 
 export default function TripMap() {
+  const { city } = useParams<{ city: string }>();
+  const [searchParams] = useSearchParams();
   const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
   const [itinerary, setItinerary] = useState<number[]>([]);
   const mapRef = useRef<HTMLDivElement>(null);
@@ -107,6 +109,14 @@ export default function TripMap() {
       setItinerary([...itinerary, selectedIdx]);
     }
   };
+
+  // Deep link: open panel for ?video=<barcelona video id>
+  useEffect(() => {
+    const videoId = searchParams.get("video");
+    if (!videoId || city?.toLowerCase() !== "barcelona") return;
+    const idx = barcelonaVideos.findIndex((v) => v.id === videoId);
+    if (idx >= 0) setSelectedIdx(idx);
+  }, [searchParams, city]);
 
   // Initialize map
   useEffect(() => {

@@ -1,12 +1,21 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Award, MapPin, Share2, CheckCircle2, Globe, Camera, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { mockPassport, barcelonaLocations, barcelonaVideos } from "@/data/barcelonaData";
 import { Progress } from "@/components/ui/progress";
+import PassportStampCard from "@/components/PassportStampCard";
+import PassportStampComposer from "@/components/PassportStampComposer";
+import { loadAllPassportStamps, type PassportStamp } from "@/data/passportStamps";
 
 export default function Passport() {
   const [showShareToast, setShowShareToast] = useState(false);
+  const [stamps, setStamps] = useState<PassportStamp[]>([]);
+
+  useEffect(() => {
+    setStamps(loadAllPassportStamps());
+  }, []);
+
   const totalLocations = barcelonaLocations.length;
   const checkedIn = mockPassport.length;
   const progress = (checkedIn / totalLocations) * 100;
@@ -38,7 +47,10 @@ export default function Passport() {
           <div className="flex items-center justify-between mb-4">
             <div>
               <p className="text-sm text-muted-foreground font-sans">Barcelona Explorer</p>
-              <p className="text-2xl font-bold font-display">{checkedIn} / {totalLocations} <span className="text-base font-normal text-muted-foreground">gems found</span></p>
+              <p className="text-2xl font-bold font-display">
+                {checkedIn} / {totalLocations}{" "}
+                <span className="text-base font-normal text-muted-foreground">gems found</span>
+              </p>
             </div>
             <div className="w-14 h-14 rounded-full border-4 border-primary flex items-center justify-center">
               <span className="font-sans font-bold text-lg text-primary">{Math.round(progress)}%</span>
@@ -46,11 +58,41 @@ export default function Passport() {
           </div>
           <Progress value={progress} className="h-2 mb-3" />
           <div className="flex items-center gap-4 text-xs text-muted-foreground font-sans">
-            <span className="flex items-center gap-1"><Globe className="w-3 h-3" /> 1 city</span>
-            <span className="flex items-center gap-1"><MapPin className="w-3 h-3" /> {checkedIn} check-ins</span>
-            <span className="flex items-center gap-1"><Camera className="w-3 h-3" /> {checkedIn} moments</span>
+            <span className="flex items-center gap-1">
+              <Globe className="w-3 h-3" /> 1 city
+            </span>
+            <span className="flex items-center gap-1">
+              <MapPin className="w-3 h-3" /> {checkedIn} check-ins
+            </span>
+            <span className="flex items-center gap-1">
+              <Camera className="w-3 h-3" /> {checkedIn} moments
+            </span>
           </div>
         </motion.div>
+
+        {/* Passport stamps — blog-like posts */}
+        <motion.section
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.12 }}
+          className="mb-8"
+        >
+          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-4">
+            <div>
+              <h2 className="font-display text-xl font-bold">Stamps</h2>
+              <p className="text-sm text-muted-foreground font-sans mt-0.5">
+                Travel notes with live links to clips and collections
+              </p>
+            </div>
+            <PassportStampComposer onPosted={setStamps} />
+          </div>
+
+          <div className="space-y-6">
+            {stamps.map((stamp, i) => (
+              <PassportStampCard key={stamp.id} stamp={stamp} index={i} />
+            ))}
+          </div>
+        </motion.section>
 
         {/* Share button */}
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }} className="mb-6">
@@ -58,7 +100,11 @@ export default function Passport() {
             <Share2 className="w-4 h-4" /> Share Your Passport
           </Button>
           {showShareToast && (
-            <motion.p initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} className="text-center text-sm text-accent font-sans mt-2">
+            <motion.p
+              initial={{ opacity: 0, y: -5 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-center text-sm text-accent font-sans mt-2"
+            >
               ✓ Share link copied to clipboard!
             </motion.p>
           )}
@@ -91,7 +137,12 @@ export default function Passport() {
                     <div className="flex-1 min-w-0 font-sans">
                       <h3 className="font-semibold text-sm">{entry.location.name}</h3>
                       <p className="text-xs text-muted-foreground">
-                        {new Date(entry.checkedInAt).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
+                        {new Date(entry.checkedInAt).toLocaleDateString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                          hour: "numeric",
+                          minute: "2-digit",
+                        })}
                       </p>
                     </div>
                   </div>

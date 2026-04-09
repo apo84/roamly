@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Search, SlidersHorizontal } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -8,8 +9,19 @@ import { mockVideos, categories } from "@/data/mockData";
 import { Badge } from "@/components/ui/badge";
 
 export default function Explore() {
+  const [searchParams] = useSearchParams();
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
+
+  const clipId = searchParams.get("clip");
+
+  useEffect(() => {
+    if (!clipId) return;
+    const t = window.setTimeout(() => {
+      document.getElementById(`clip-${clipId}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 100);
+    return () => window.clearTimeout(t);
+  }, [clipId]);
 
   const filtered = mockVideos.filter((v) => {
     const matchSearch = !search || v.title.toLowerCase().includes(search.toLowerCase()) || v.caption.toLowerCase().includes(search.toLowerCase());
@@ -68,9 +80,11 @@ export default function Explore() {
           {filtered.map((video, i) => (
             <motion.div
               key={video.id}
+              id={`clip-${video.id}`}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.05 }}
+              className={clipId === video.id ? "ring-2 ring-primary ring-offset-2 ring-offset-background rounded-2xl" : ""}
             >
               <VideoCard video={video} />
             </motion.div>
